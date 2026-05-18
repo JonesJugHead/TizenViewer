@@ -8,6 +8,12 @@ function apiOrigin() {
   return window.location.origin;
 }
 
+function truncateUrl(u, maxLen) {
+  if (!u) return '';
+  if (u.length <= maxLen) return u;
+  return u.slice(0, maxLen - 1) + '…';
+}
+
 function getIframe() {
   return document.getElementById('tvframe');
 }
@@ -36,6 +42,38 @@ function clearRemoteState() {
   }).catch(function () {});
 }
 
+function updateStatusPanel(online, state) {
+  var badge = document.getElementById('tizenviewer-badge');
+  var detail = document.getElementById('tizenviewer-detail');
+  var title = document.getElementById('tizenviewer-title');
+  if (!badge || !detail || !title) return;
+
+  if (!online) {
+    badge.textContent = 'Hors ligne';
+    badge.className = 'tizenviewer-badge tizenviewer-badge--bad';
+    detail.textContent =
+      'Le serveur ne répond pas. Sur le PC, lance « local-test » ou « npm run local », ouvre le port 9350 au pare-feu, et vérifie que la TV utilise la même IP que le PC sur le réseau.';
+    return;
+  }
+
+  var ver = state && state.version ? String(state.version) : '';
+  title.textContent = ver ? 'TizenViewer · v' + ver : 'TizenViewer';
+
+  badge.textContent = 'Connecté';
+  badge.className = 'tizenviewer-badge tizenviewer-badge--ok';
+
+  var phonePage = apiOrigin() + '/phone.html';
+  if (state && state.targetUrl) {
+    detail.textContent =
+      'Une page a été envoyée depuis le téléphone :\n' + truncateUrl(state.targetUrl, 100);
+  } else {
+    detail.textContent =
+      'En attente d’une URL. Sur le téléphone, ouvre :\n' +
+      phonePage +
+      '\n…puis choisis une adresse et envoie-la : l’aperçu apparaît dans la zone noire ci-dessous.';
+  }
+}
+
 function mountChrome() {
   if (document.getElementById('tvframe')) return;
 
@@ -44,6 +82,39 @@ function mountChrome() {
   document.head.appendChild(style);
   document.body.classList.add('tizenviewer-navigation-mode');
   document.body.innerHTML = '';
+
+  var header = document.createElement('header');
+  header.id = 'tizenviewer-header';
+
+  var titleRow = document.createElement('div');
+  titleRow.className = 'tizenviewer-header-row';
+
+  var title = document.createElement('div');
+  title.id = 'tizenviewer-title';
+  title.className = 'tizenviewer-title';
+  title.textContent = 'TizenViewer';
+
+  var badge = document.createElement('span');
+  badge.id = 'tizenviewer-badge';
+  badge.className = 'tizenviewer-badge tizenviewer-badge--pending';
+  badge.textContent = 'Connexion…';
+
+  titleRow.appendChild(title);
+  titleRow.appendChild(badge);
+
+  var detail = document.createElement('div');
+  detail.id = 'tizenviewer-detail';
+  detail.className = 'tizenviewer-detail';
+  detail.textContent = 'Contact du serveur en cours…';
+
+  header.appendChild(titleRow);
+  header.appendChild(detail);
+
+  var iframe = document.createElement('iframe');
+  iframe.id = 'tvframe';
+  iframe.title = 'Contenu';
+  iframe.setAttribute('allowfullscreen', '');
+  iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
 
   var chrome = document.createElement('div');
   chrome.id = 'tizenviewer-chrome';
@@ -61,12 +132,7 @@ function mountChrome() {
   chrome.appendChild(btnReload);
   chrome.appendChild(btnClear);
 
-  var iframe = document.createElement('iframe');
-  iframe.id = 'tvframe';
-  iframe.title = 'Contenu';
-  iframe.setAttribute('allowfullscreen', '');
-  iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
-
+  document.body.appendChild(header);
   document.body.appendChild(iframe);
   document.body.appendChild(chrome);
 
@@ -115,9 +181,11 @@ function focusChromeFirst() {
 function pollOnce() {
   fetch(apiOrigin() + '/api/state', { cache: 'no-store' })
     .then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
       return r.json();
     })
     .then(function (s) {
+      updateStatusPanel(true, s);
       if (!s || typeof s.nonce !== 'number') return;
       if (s.nonce === lastNonce) return;
       lastNonce = s.nonce;
@@ -132,7 +200,9 @@ function pollOnce() {
         setIframeUrl('');
       }
     })
-    .catch(function () {});
+    .catch(function () {
+      updateStatusPanel(false, null);
+    });
 }
 
 function setupPoll() {
@@ -204,6 +274,9 @@ function setupMediaKeys() {
 }
 
 function start() {
+  if (window.__TIZENVIEWER_INIT__) return;
+  window.__TIZENVIEWER_INIT__ = true;
+
   mountChrome();
   setupPoll();
   setupMediaKeys();

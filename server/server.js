@@ -9,6 +9,14 @@ const PUBLIC = path.join(__dirname, 'public');
 const MODULE_ROOT = path.join(__dirname, '..');
 const PORT = Number(process.env.TIZENVIEWER_PORT || 9350);
 
+let APP_VERSION = '0.0.0';
+try {
+  const pkg = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, 'package.json'), 'utf8'));
+  if (pkg && typeof pkg.version === 'string') APP_VERSION = pkg.version;
+} catch {
+  /* ignore */
+}
+
 let nonce = 0;
 let targetUrl = '';
 
@@ -127,7 +135,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (u.pathname === '/api/state' && req.method === 'GET') {
-    sendJson(res, 200, { targetUrl, nonce });
+    sendJson(res, 200, { targetUrl, nonce, version: APP_VERSION });
     return;
   }
 
@@ -175,7 +183,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (u.pathname === '/preview' || u.pathname === '/preview/') {
-      res.writeHead(302, { Location: '/?bundle=1' });
+      res.writeHead(302, { Location: '/' });
       res.end();
       return;
     }
@@ -193,5 +201,5 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('Page TV       : http://<IP-LAN>:' + PORT + '/');
   console.log('TizenBrew URL : http://<IP-LAN>:' + PORT + '/  (package.json + /dist/)');
   console.log('Téléphone     : http://<IP-LAN>:' + PORT + '/phone.html');
-  console.log('Test navigateur : http://<IP-LAN>:' + PORT + '/preview  (redirige vers ?bundle=1)');
+  console.log('Aperçu       : http://<IP-LAN>:' + PORT + '/preview  (redirige vers /)');
 });

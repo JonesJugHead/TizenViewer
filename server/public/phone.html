@@ -82,9 +82,7 @@
       (<strong>même IP, même port</strong>).
     </p>
     <p>
-      <strong>Test sur PC :</strong> ouvrez dans un autre onglet
-      <code id="preview-url"></code>
-      — sans cela, la page <code>/</code> ne charge pas le script (c’est TizenBrew qui l’injecte sur la TV).
+      La page affichée sur la TV (<code>/</code>) charge <strong>toujours</strong> le script depuis ce serveur, tu dois voir le bandeau « TizenViewer » et l’état <strong>Connecté</strong> si tout va bien.
     </p>
 
     <label for="url">Adresse web</label>
@@ -98,12 +96,6 @@
     <script>
       const statusEl = document.getElementById('status');
       const urlEl = document.getElementById('url');
-      const previewBase =
-        window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-      const previewEl = document.getElementById('preview-url');
-      if (previewEl) {
-        previewEl.textContent = previewBase + '?bundle=1';
-      }
 
       function setStatus(msg, cls) {
         statusEl.textContent = msg;

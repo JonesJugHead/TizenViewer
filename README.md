@@ -6,7 +6,7 @@ Module [TizenBrew](https://github.com/notexactlyawe/tizenbrew) pour ouvrir **n�
 
 1. Un **petit serveur HTTP** tourne sur votre PC (dossier `server/`), accessible sur le LAN (`0.0.0.0`).
 2. Le `package.json` du module pointe vers l’URL de ce serveur (`websiteURL`), ici `http://192.168.1.41:9350` (à adapter si ton IP LAN change).
-3. La **TV** ouvre cette page : le script injecté affiche un **iframe plein écran** et interroge `/api/state`.
+3. La **TV** ouvre cette page : le script charge l’interface (bandeau d’état + iframe) et interroge en boucle `/api/state`.
 4. Le **téléphone** ouvre `http://192.168.1.41:9350/phone.html`, saisit une URL et envoie `POST /api/navigate`.
 5. La TV recharge l’iframe avec cette URL.
 
@@ -22,16 +22,11 @@ La **barre du bas** (Rafraîchir / Effacer) est pensée pour la **télécommande
 
 1. Sur le PC : `build.bat` (ou `npm run build`), puis `local-test.bat` (ou `npm run local`). Le serveur écoute sur **9350**, sert la page TV, la télécommande web et les fichiers TizenBrew (`/package.json`, `/dist/…`).
 2. Vérifie **`websiteURL`** dans `package.json` (LAN du PC qui lance le serveur, ex. `http://192.168.1.41:9350`). La TV ne peut pas utiliser `127.0.0.1` pour joindre ton PC.
-3. Dans TizenBrew sur la TV, ajoutez la source : `http://192.168.1.41:9350/` (même base que `websiteURL`) puis installez le module (le dossier `dist/` doit exister après le build).
+3. Dans TizenBrew sur la TV, ajoute la source : `http://192.168.1.41:9350/` (même base que `websiteURL`) puis installe le module (le dossier `dist/` doit exister après le build).
 
 ## Tester sur un navigateur (PC)
 
-La page `/` **ne contient pas** le script du module : sur la TV, c’est **TizenBrew** qui injecte `dist/userScript.js`. Sur PC, pour voir le même comportement (iframe + requêtes `/api/state`), ouvrez :
-
-- `http://192.168.1.41:9350/?bundle=1` (ou `http://127.0.0.1:9350/?bundle=1` depuis la même machine), ou  
-- `http://192.168.1.41:9350/preview` (redirection vers `/?bundle=1`).
-
-Sinon le 1er onglet reste vide et aucun appel réseau vers `/api/state` n’apparaît.
+Ouvre la même URL que la TV : `http://192.168.1.41:9350/` (ou `http://127.0.0.1:9350/` sur le PC qui sert le projet). Tu dois voir le bandeau **TizenViewer**, l’état **Connecté** et les appels `GET /api/state` dans l’inspecteur réseau. La route `/preview` redirige simplement vers `/`.
 
 ## Ports et pare-feu
 
