@@ -30,5 +30,13 @@
     "browser",
     "remote"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JonesJugHead/TizenViewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JonesJugHead/TizenViewer/issues"
+  },
+  "homepage": "https://github.com/JonesJugHead/TizenViewer#readme"
 }

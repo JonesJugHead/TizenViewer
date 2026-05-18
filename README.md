@@ -38,6 +38,10 @@ Sinon le 1er onglet reste vide et aucun appel réseau vers `/api/state` n’appa
 - Port par défaut : **9350**. Variable d’environnement : `TIZENVIEWER_PORT`.
 - Autoriser ce port entrant sur Windows si la TV ne joint pas le serveur.
 
+## Sécurité
+
+Ce dépôt ne contient ni secrets ni clés. Le serveur **n’implémente pas d’authentification** : n’expose **`0.0.0.0`** que sur un **réseau local de confiance** (toute personne sur le LAN peut pousser une URL vers la TV). Ne pas publier le service sur Internet sans reverse-proxy, auth et HTTPS.
+
 ## Licence
 
 MIT (module et serveur). Le fichier `spatial-navigation-polyfill.js` reprend la logique de navigation spatiale sous licence MIT (voir en-tête du fichier).
