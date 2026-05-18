@@ -10,7 +10,7 @@ Module [TizenBrew](https://github.com/notexactlyawe/tizenbrew) pour ouvrir **n�
 4. Le **téléphone** ouvre `http://192.168.1.41:9350/phone.html`, saisit une URL et envoie `POST /api/navigate`.
 5. La TV recharge l’iframe avec cette URL.
 
-La **barre du bas** (Rafraîchir / Effacer) est pensée pour la **télécommande** : navigation spatiale comme dans TFlix (flèches + OK). La touche **Retour** efface la page et remet l’iframe vide (idem que « Effacer » côté téléphone).
+L’**overlay** (bandeau + vignette + barre du bas) se **range tout seul après 5 s** sans touche : l’iframe passe en **plein écran** et reste **cliquable** au centre (les bords du bandeau ne captent les clics que lorsque l’overlay est visible). Une nouvelle touche **télécommande** fait **réapparaître** l’overlay ; **Retour** la ramène aussi si elle était masquée (second **Retour** : efface la page, comme avant).
 
 ## Limites importantes
 

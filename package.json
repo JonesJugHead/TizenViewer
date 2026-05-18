@@ -1,7 +1,7 @@
 {
   "name": "@tizenview/tizenviewer",
   "appName": "TizenViewer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Charge une page web arbitraire sur la TV via TizenBrew, pilotée depuis un téléphone sur le réseau local.",
   "packageType": "mods",
   "websiteURL": "http://192.168.1.41:9350",

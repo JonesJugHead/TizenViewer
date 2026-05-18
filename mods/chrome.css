@@ -6,6 +6,63 @@ body {
   overflow: hidden;
 }
 
+/* Iframe sous l’overlay ; plein écran quand l’UI est masquée */
+#tvframe {
+  position: fixed;
+  top: 96px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 96px - 56px);
+  border: 0;
+  background: #000;
+  z-index: 1;
+  transition:
+    top 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.tizenviewer-ui-immersive #tvframe {
+  top: 0;
+  height: 100vh;
+}
+
+/* Conteneur : vignette + bandeaux ; le centre reste traversant (pointer-events) */
+#tizenviewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+  opacity: 1;
+}
+
+#tizenviewer-overlay.tizenviewer-overlay--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.55s ease;
+}
+
+#tizenviewer-overlay.tizenviewer-overlay--hidden #tizenviewer-header,
+#tizenviewer-overlay.tizenviewer-overlay--hidden #tizenviewer-chrome {
+  pointer-events: none !important;
+}
+
+.tizenviewer-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 90% 78% at 50% 48%,
+    rgba(0, 0, 0, 0) 35%,
+    rgba(0, 0, 0, 0.18) 62%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+  box-shadow:
+    inset 0 0 100px rgba(0, 0, 0, 0.55),
+    inset 0 0 240px rgba(0, 0, 0, 0.35);
+}
+
 /* Bandeau d’état (lisible à distance TV) */
 #tizenviewer-header {
   position: fixed;
@@ -15,10 +72,14 @@ body {
   min-height: 96px;
   padding: 14px 18px 12px;
   box-sizing: border-box;
-  z-index: 10001;
-  background: linear-gradient(180deg, #15151d 0%, #0e0e12 100%);
-  border-bottom: 1px solid #2a2a36;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  z-index: 1;
+  pointer-events: auto;
+  background: linear-gradient(180deg, rgba(21, 21, 29, 0.97) 0%, rgba(14, 14, 18, 0.94) 100%);
+  border-bottom: 1px solid rgba(42, 42, 54, 0.9);
+  box-shadow:
+    0 6px 28px rgba(0, 0, 0, 0.55),
+    0 2px 12px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
 }
 
 .tizenviewer-header-row {
@@ -81,14 +142,19 @@ body {
   left: 0;
   right: 0;
   height: 56px;
-  background: rgba(12, 12, 14, 0.95);
+  background: rgba(12, 12, 14, 0.92);
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 0 16px;
   box-sizing: border-box;
-  z-index: 10000;
-  border-top: 1px solid #333;
+  z-index: 1;
+  pointer-events: auto;
+  border-top: 1px solid rgba(51, 51, 51, 0.95);
+  box-shadow:
+    0 -8px 32px rgba(0, 0, 0, 0.5),
+    0 -2px 16px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
 }
 
 #tizenviewer-chrome button {
@@ -116,14 +182,4 @@ body {
 
 body.tizenviewer-navigation-mode {
   cursor: default;
-}
-
-#tvframe {
-  position: fixed;
-  top: 96px;
-  left: 0;
-  width: 100%;
-  height: calc(100vh - 96px - 56px);
-  border: 0;
-  background: #000;
 }

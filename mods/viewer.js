@@ -3,6 +3,8 @@ import css from './chrome.css';
 
 var lastNonce = -1;
 var lastAppliedUrl = '';
+var UI_AUTOHIDE_MS = 5000;
+var overlayAutoHideTimer = null;
 
 function apiOrigin() {
   return window.location.origin;
@@ -16,6 +18,51 @@ function truncateUrl(u, maxLen) {
 
 function getIframe() {
   return document.getElementById('tvframe');
+}
+
+function getOverlayEl() {
+  return document.getElementById('tizenviewer-overlay');
+}
+
+function setOverlayHidden(hidden) {
+  var o = getOverlayEl();
+  var frame = getIframe();
+  if (!o) return;
+  if (hidden) {
+    o.classList.add('tizenviewer-overlay--hidden');
+    document.body.classList.add('tizenviewer-ui-immersive');
+    stripFocusClass();
+    if (frame) {
+      try {
+        frame.focus();
+      } catch (err) {}
+    }
+  } else {
+    o.classList.remove('tizenviewer-overlay--hidden');
+    document.body.classList.remove('tizenviewer-ui-immersive');
+  }
+}
+
+function bumpRemoteActivity() {
+  var o = getOverlayEl();
+  if (!o) return;
+  var wasHidden = o.classList.contains('tizenviewer-overlay--hidden');
+  setOverlayHidden(false);
+  if (wasHidden) {
+    focusChromeFirst();
+  }
+  clearTimeout(overlayAutoHideTimer);
+  overlayAutoHideTimer = setTimeout(function () {
+    setOverlayHidden(true);
+  }, UI_AUTOHIDE_MS);
+}
+
+function setupRemoteActivityListeners() {
+  function onActivity() {
+    bumpRemoteActivity();
+  }
+  window.addEventListener('keydown', onActivity, true);
+  window.addEventListener('keyup', onActivity, true);
 }
 
 function setIframeUrl(url) {
@@ -68,9 +115,9 @@ function updateStatusPanel(online, state) {
       'Une page a été envoyée depuis le téléphone :\n' + truncateUrl(state.targetUrl, 100);
   } else {
     detail.textContent =
-      'En attente d’une URL. Sur le téléphone, ouvre :\n' +
+      'En attente d’une URL. Sur le téléphone, ouvre :\n' +
       phonePage +
-      '\n…puis choisis une adresse et envoie-la : l’aperçu apparaît dans la zone noire ci-dessous.';
+      '\n…puis envoie l’URL : affichage plein écran ci-dessous. L’overlay se range après 5 s sans touche ; « Retour » le rattache si tu étais en plein contenu.';
   }
 }
 
@@ -113,6 +160,7 @@ function mountChrome() {
   var iframe = document.createElement('iframe');
   iframe.id = 'tvframe';
   iframe.title = 'Contenu';
+  iframe.setAttribute('tabindex', '-1');
   iframe.setAttribute('allowfullscreen', '');
   iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
 
@@ -132,15 +180,27 @@ function mountChrome() {
   chrome.appendChild(btnReload);
   chrome.appendChild(btnClear);
 
-  document.body.appendChild(header);
+  var overlay = document.createElement('div');
+  overlay.id = 'tizenviewer-overlay';
+
+  var vignette = document.createElement('div');
+  vignette.className = 'tizenviewer-vignette';
+  vignette.setAttribute('aria-hidden', 'true');
+
+  overlay.appendChild(vignette);
+  overlay.appendChild(header);
+  overlay.appendChild(chrome);
+
   document.body.appendChild(iframe);
-  document.body.appendChild(chrome);
+  document.body.appendChild(overlay);
 
   btnReload.addEventListener('click', function () {
+    bumpRemoteActivity();
     reloadIframe();
   });
 
   btnClear.addEventListener('click', function () {
+    bumpRemoteActivity();
     lastAppliedUrl = '';
     clearRemoteState();
     setIframeUrl('');
@@ -148,10 +208,12 @@ function mountChrome() {
   });
 
   btnReload.addEventListener('focus', function () {
+    bumpRemoteActivity();
     stripFocusClass();
     btnReload.classList.add('tizenviewer-focused');
   });
   btnClear.addEventListener('focus', function () {
+    bumpRemoteActivity();
     stripFocusClass();
     btnClear.classList.add('tizenviewer-focused');
   });
@@ -242,7 +304,23 @@ function tryMediaOnIframe(key) {
 
 function setupMediaKeys() {
   document.addEventListener('keydown', function (e) {
+    var o = getOverlayEl();
+    var overlayHidden = !!(o && o.classList.contains('tizenviewer-overlay--hidden'));
+
     switch (e.key) {
+      case 'Back':
+      case 'XF86Back':
+        e.preventDefault();
+        if (overlayHidden) {
+          bumpRemoteActivity();
+          return;
+        }
+        lastAppliedUrl = '';
+        clearRemoteState();
+        setIframeUrl('');
+        focusChromeFirst();
+        bumpRemoteActivity();
+        return;
       case 'MediaPlayPause':
       case 'MediaPlay':
       case 'MediaPause':
@@ -252,23 +330,17 @@ function setupMediaKeys() {
       case 'MediaTrackNext':
       case 'MediaTrackPrevious':
         tryMediaOnIframe(e.key);
-        break;
-      case 'Back':
-      case 'XF86Back':
-        e.preventDefault();
-        lastAppliedUrl = '';
-        clearRemoteState();
-        setIframeUrl('');
-        focusChromeFirst();
-        break;
+        bumpRemoteActivity();
+        return;
       case 'Enter':
         if (document.activeElement === getIframe()) {
           e.preventDefault();
           focusChromeFirst();
         }
-        break;
+        bumpRemoteActivity();
+        return;
       default:
-        break;
+        bumpRemoteActivity();
     }
   });
 }
@@ -279,8 +351,10 @@ function start() {
 
   mountChrome();
   setupPoll();
+  setupRemoteActivityListeners();
   setupMediaKeys();
   focusChromeFirst();
+  bumpRemoteActivity();
 }
 
 if (document.readyState === 'loading') {
