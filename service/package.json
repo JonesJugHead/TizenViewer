@@ -1,0 +1,16 @@
+{
+  "name": "@tizenview/tizenviewer-service",
+  "version": "0.1.0",
+  "description": "Service TizenViewer",
+  "type": "module",
+  "main": "service.js",
+  "scripts": {
+    "build": "rollup -c rollup.config.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@rollup/plugin-commonjs": "^25.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.2",
+    "rollup": "^3.26.2"
+  }
+}

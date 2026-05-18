@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TizenViewer</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Sur la TV, TizenBrew injecte dist/userScript.js : cette page reste vide côté script.
+      Sur un navigateur (test PC), ajoutez ?bundle=1 pour charger le même bundle :
+      http://192.168.1.41:9350/?bundle=1
+    -->
+    <script>
+      (function () {
+        try {
+          var q = new URLSearchParams(window.location.search);
+          if (q.get('bundle') !== '1') return;
+          var s = document.createElement('script');
+          s.src = '/dist/userScript.js';
+          document.body.appendChild(s);
+        } catch (e) {}
+      })();
+    </script>
+  </body>
+</html>

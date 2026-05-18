@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TizenViewer — contrôle</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #111;
+        color: #eee;
+        max-width: 520px;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 0 0 16px;
+        line-height: 1.45;
+        color: #bbb;
+        font-size: 0.95rem;
+      }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+      }
+      input[type='url'],
+      input[type='text'] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #444;
+        background: #1a1a1a;
+        color: #fff;
+        font-size: 1rem;
+      }
+      button {
+        margin-top: 12px;
+        padding: 12px 18px;
+        border-radius: 8px;
+        border: 0;
+        background: #3b82f6;
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        width: 100%;
+      }
+      button.secondary {
+        background: #333;
+        margin-top: 10px;
+      }
+      .status {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 8px;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        font-size: 0.9rem;
+        word-break: break-all;
+      }
+      .err {
+        color: #f87171;
+      }
+      .ok {
+        color: #86efac;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>TizenViewer</h1>
+    <p>
+      Entrez une URL à ouvrir sur la TV. Le téléviseur doit afficher la page d’accueil de ce même serveur
+      (<strong>même IP, même port</strong>).
+    </p>
+    <p>
+      <strong>Test sur PC :</strong> ouvrez dans un autre onglet
+      <code id="preview-url"></code>
+      — sans cela, la page <code>/</code> ne charge pas le script (c’est TizenBrew qui l’injecte sur la TV).
+    </p>
+
+    <label for="url">Adresse web</label>
+    <input id="url" type="text" inputmode="url" placeholder="https://exemple.com" autocomplete="off" />
+
+    <button type="button" id="send">Ouvrir sur la TV</button>
+    <button type="button" class="secondary" id="clear">Effacer (page vide sur la TV)</button>
+
+    <div class="status" id="status">Prêt.</div>
+
+    <script>
+      const statusEl = document.getElementById('status');
+      const urlEl = document.getElementById('url');
+      const previewBase =
+        window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+      const previewEl = document.getElementById('preview-url');
+      if (previewEl) {
+        previewEl.textContent = previewBase + '?bundle=1';
+      }
+
+      function setStatus(msg, cls) {
+        statusEl.textContent = msg;
+        statusEl.className = 'status' + (cls ? ' ' + cls : '');
+      }
+
+      async function postJson(path, body) {
+        const r = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body || {})
+        });
+        const text = await r.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { raw: text };
+        }
+        if (!r.ok) {
+          const err = new Error((data && data.error) || 'Erreur ' + r.status);
+          err.data = data;
+          throw err;
+        }
+        return data;
+      }
+
+      document.getElementById('send').addEventListener('click', async () => {
+        try {
+          const data = await postJson('/api/navigate', { url: urlEl.value });
+          setStatus('Envoyé : ' + (data.targetUrl || urlEl.value), 'ok');
+        } catch (e) {
+          setStatus(e.message || String(e), 'err');
+        }
+      });
+
+      document.getElementById('clear').addEventListener('click', async () => {
+        try {
+          await postJson('/api/clear', {});
+          setStatus('Effacement demandé sur la TV.', 'ok');
+        } catch (e) {
+          setStatus(e.message || String(e), 'err');
+        }
+      });
+
+      async function refreshState() {
+        try {
+          const r = await fetch('/api/state', { cache: 'no-store' });
+          const s = await r.json();
+          if (s.targetUrl) {
+            setStatus('État serveur : ' + s.targetUrl, 'ok');
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      refreshState();
+    </script>
+  </body>
+</html>
